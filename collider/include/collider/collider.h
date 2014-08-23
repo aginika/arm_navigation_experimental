@@ -50,7 +50,8 @@
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include <pcl/ros/conversions.h>
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
 //#include <pcl_tf/transforms.h> // cturtle
 #include <pcl_ros/transforms.h>  // dturtle
 
@@ -73,10 +74,10 @@
 #include <algorithm>
 
 #include <octomap/OcTreeStamped.h>
-#include <octomap_ros/OctomapROS.h>
+#include <octomap_ros/conversions.h>
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/GetOctomap.h>
-
+#include <octomap_msgs/conversions.h>
 
 class Collider {
 

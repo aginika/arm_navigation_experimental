@@ -423,9 +423,10 @@ void Collider::cloudCombinedCallback(const sensor_msgs::PointCloud2::ConstPtr &c
 
   pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
   pcl::fromROSMsg (transformed_cloud, pcl_cloud);
-  
-  pcl_cloud.header.frame_id = cm_->getWorldFrameId();
-  pcl_cloud.header.stamp = cloud->header.stamp;
+
+  pcl_cloud.header = pcl_conversions::toPCL(transformed_cloud.header);
+  // pcl_cloud.header.frame_id = cm_->getWorldFrameId();
+  // pcl_cloud.header.stamp = cloud->header.stamp;
 
   std::vector<int> inside_mask;
   //filtering out attached object inside points
@@ -1169,8 +1170,8 @@ bool Collider::octomapSrv(octomap_msgs::GetOctomap::Request  &req, octomap_msgs:
 
 	res.map.header.frame_id = fixed_frame_;
 	res.map.header.stamp = ros::Time::now();
-	octomap::octomapMapToMsg(*collision_octree_, res.map);
-
+        //	octomap::octomapMapToMsg(*collision_octree_, res.map);
+        octomap_msgs::binaryMapToMsg<OcTreeType>(*collision_octree_, res.map);
 	return true;
 }
 

@@ -1,42 +1,40 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_find_ros_package(actionlib_msgs)
-include(${actionlib_msgs_PACKAGE_PATH}/cmake/actionbuild.cmake)
-genaction()
+# Catkin User Guide: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/user_guide.html
+# Catkin CMake Standard: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/standards.html
+cmake_minimum_required(VERSION 2.8.3)
+project(collider)
+# Load catkin and all dependencies required for this package
+# TODO: remove all from COMPONENTS that are not catkin packages.
+find_package(catkin REQUIRED COMPONENTS roscpp tf visualization_msgs arm_navigation_msgs std_msgs std_srvs actionlib actionlib_msgs pcl_ros pcl_conversions image_transport image_geometry robot_self_filter planning_environment octomap_ros octomap_msgs)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(Eigen REQUIRED)
-include_directories(${EIGEN_INCLUDE_DIRS})
-
 find_package(OpenCV REQUIRED)
-find_package(octomap REQUIRED)
-find_package(octomap_msgs REQUIRED)
-
-# some optimization
+find_package(OpenMP REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread signals)
 add_definitions(-Wall -DNDEBUG -DEIGEN_NO_DEBUG -O3 -msse3 -mssse3 -funroll-loops)
-
-rosbuild_init()
-rosbuild_genmsg()
-rosbuild_gensrv()
-
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(OCTOMAP REQUIRED octomap)
-include_directories(${OCTOMAP_INCLUDE_DIRS})
-link_directories(${OCTOMAP_LIBRARY_DIRS})
+
+include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${OpenMP_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
+
+
+add_service_files(
+  FILES
+  OccupancyBBXQuery.srv
+  OccupancyBBXSizeQuery.srv
+  OccupancyPointQuery.srv
+)
+
+# add_action_files(
+#   FILES
+#   ConstructStaticCollisionMap.action
+# )
+
+generate_messages(
+  DEPENDENCIES geometry_msgs std_msgs
+)
+
 
 find_package(ASSIMP QUIET)
 if (NOT ASSIMP_FOUND)
@@ -63,12 +61,20 @@ else()
   set(IS_ASSIMP3 0) # most likely not
 endif()
 
-rosbuild_add_executable(collider_node src/collider.cpp src/collider_node.cpp)
-rosbuild_add_openmp_flags(collider_node)
-rosbuild_link_boost(collider_node thread signals)
-target_link_libraries(collider_node octomap
-                                    octomap_ros
-                                    octomath
+
+# catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
+# TODO: fill in what other packages will need to use this package
+catkin_package(
+    DEPENDS  eigen opencv2 pcl openmp
+    CATKIN_DEPENDS roscpp tf visualization_msgs arm_navigation_msgs std_msgs std_srvs actionlib actionlib_msgs pcl_ros pcl_conversions image_transport image_geometry robot_self_filter planning_environment octomap_ros octomap_msgs
+    INCLUDE_DIRS # TODO include
+    LIBRARIES # TODO
+)
+
+add_executable(collider_node src/collider.cpp src/collider_node.cpp)
+target_link_libraries(collider_node ${catkin_LIBRARIES}
                                     ${OpenCV_LIBRARIES}
                                     ${ASSIMP_LIBRARIES}
+                                    ${Boost_LIBRARIES}
+                                    ${OpenMP_LIBRARIES}
 )
